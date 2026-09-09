@@ -93,13 +93,13 @@ if_save_combined_label: True
 
 # vertebrae engine:
 #   shapekit             - default mask-based module (no CT needed)
-#   shapekit_iterative   - VerSe-inspired iterative refinement loop (no CT needed)
+#   shapekit_songlin   - VerSe-inspired iterative refinement loop (no CT needed)
 #   shapekit_pro          - evidence-gated repair against the case CT: recolors
 #                   label errors inside the prediction envelope instead of
 #                   deleting bone; every risky stage self-reverts unless it
 #                   can prove improvement. Needs the case CT (see below);
 #                   falls back to the default module when the CT is absent.
-vertebrae_engine: shapekit
+vertebrae_engine: shapekit_songlin # use iterative refinement as default option for vertebrae processing
 
 # CT lookup for shapekit_pro: first <input_case>/<ct_file_name>, then
 # <ct_root>/<case_id>/<ct_file_name> when ct_root is set.

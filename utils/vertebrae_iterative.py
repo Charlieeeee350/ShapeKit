@@ -12,9 +12,10 @@ Key additions over the default vertebrae_postprocessing.py:
   - Duplicate vertebrae removal (IoU-based)
   - Anatomical size consistency validation
   - Iterative refinement until convergence
-
+  
+Authored by Songlin Hou (songlinhou1993@gmail.com)
 Usage:
-  Set `vertebrae_engine: shapekit_iterative` in config.yaml to use this module.
+  Set `vertebrae_engine: shapekit_songlin` in config.yaml to use this module.
 """
 
 import numpy as np

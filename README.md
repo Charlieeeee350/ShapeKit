@@ -125,7 +125,7 @@ envelope instead of deleting bone**:
 Enable it in `config.yaml`:
 
 ```yaml
-vertebrae_engine: shapekit_pro   # default: shapekit (existing module)
+vertebrae_engine: shapekit_pro   # default: shapekit_songlin (existing module)
 ct_file_name: ct.nii.gz          # looked up inside each input case folder
 # ct_root: /path/to/ct/cases     # fallback root when CTs live elsewhere
 ```
@@ -170,10 +170,10 @@ segmentation and identification using a graph optimization and an
 anatomic consistency cycle" (2022,
 [https://gitlab.inria.fr/spine/vertebrae_segmentation](https://gitlab.inria.fr/spine/vertebrae_segmentation)).
 
-Enable it in `config.yaml`:
+It is the default option in `config.yaml`:
 
 ```yaml
-vertebrae_engine: shapekit_iterative   # default: shapekit (existing module)
+vertebrae_engine: shapekit_songlin   # default option for vertebrae processing
 ```
 
 No CT image is needed — the module works from prediction masks alone.

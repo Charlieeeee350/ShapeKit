@@ -5,6 +5,7 @@ from utils.organs_postprocessing import *
 from utils.vertebrae_postprocessing import postprocessing_vertebrae
 from utils.vertebrae_iterative import postprocessing_vertebrae as postprocessing_vertebrae_songlin
 from utils.vertebrae_pro import postprocessing_vertebrae_pro
+from utils.vertebrae_geodesic import postprocessing_vertebrae_geodesic
 import logging
 import yaml
 import traceback
@@ -34,7 +35,12 @@ organ_list = list(class_map.values())
 reference_file_name =  affine_reference_file_name # affine info
 data_type = np.int16
 save_combined_label_bool = bool(config['if_save_combined_label'])
-vertebrae_engine = config.get('vertebrae_engine', 'shapekit')
+vertebrae_engine = config.get('vertebrae_engine', 'shapekit_geodesic')
+if vertebrae_engine not in {
+    'shapekit_geodesic', 'shapekit_pro', 'shapekit_songlin',
+    'shapekit_iterative', 'shapekit',
+}:
+    raise ValueError(f"Unknown vertebrae_engine: {vertebrae_engine}")
 ct_file_name = config.get('ct_file_name', 'ct.nii.gz')
 ct_root = config.get('ct_root', None)
 
@@ -111,6 +117,7 @@ def combine_segmentation_dict(segmentation_dict: dict, class_map: dict) -> np.nd
 
 def process_organs(segmentation_dict: dict, reference_img, combined_seg: np.array, target_organs: set, patient_id: str, logger: logging.Logger,
     ct_path: str = None,
+    vertebrae_report_path: str = None,
 ):
     """
     Apply organ-specific post-processing functions to the segmentation dict
@@ -196,7 +203,16 @@ def process_organs(segmentation_dict: dict, reference_img, combined_seg: np.arra
         )
 
     if 'vertebrae' in target_organs:
-        if vertebrae_engine == 'shapekit_pro':
+        if vertebrae_engine == 'shapekit_geodesic':
+            segmentation_dict = postprocessing_vertebrae_geodesic(
+                patient_id,
+                segmentation_dict,
+                reference_img,
+                ct_path,
+                logger=logger,
+                report_path=vertebrae_report_path,
+            )
+        elif vertebrae_engine == 'shapekit_pro':
             segmentation_dict = postprocessing_vertebrae_pro(
                 patient_id,
                 segmentation_dict,
@@ -204,7 +220,7 @@ def process_organs(segmentation_dict: dict, reference_img, combined_seg: np.arra
                 ct_path,
                 logger=logger,
             )
-        elif vertebrae_engine == 'shapekit_songlin':
+        elif vertebrae_engine in ('shapekit_songlin', 'shapekit_iterative'):
             segmentation_dict = postprocessing_vertebrae_songlin(
                 patient_id,
                 segmentation_dict,
@@ -248,7 +264,7 @@ def main(input_path, input_folder_name, output_path=None):
     segmentation = combine_segmentation_dict(segmentation_dict, class_map)
     patient_id = os.path.basename(input_path)
 
-    # locate the case CT for the shapekit_pro vertebrae engine (optional)
+    # Locate the case CT for the Geodesic and Pro vertebrae engines.
     ct_path = os.path.join(input_path, ct_file_name)
     if not os.path.exists(ct_path) and ct_root is not None:
         ct_path = os.path.join(ct_root, input_folder_name, ct_file_name)
@@ -261,6 +277,9 @@ def main(input_path, input_folder_name, output_path=None):
         patient_id = patient_id,
         logger = logging,
         ct_path = ct_path,
+        vertebrae_report_path = os.path.join(
+            output_path, input_folder_name, 'vertebrae_geodesic_report.json'
+        ),
     )
     
     save_folder_path = os.path.join(output_path, input_folder_name)

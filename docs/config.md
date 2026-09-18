@@ -66,12 +66,41 @@
                 ...
                 └── veins.nii.gz
     ```
-7. `vertebrae_engine`: which vertebrae module to run. `shapekit` (default)
-   is the existing mask-based module. `shapekit_pro` is the evidence-gated
-   engine that repairs vertebra labels against the case CT by recoloring
-   inside the prediction envelope (no deletion of predicted bone); it
-   requires the case CT and falls back to `shapekit` when the CT is absent.
+7. `vertebrae_engine`: which vertebrae module to run. The default is
+   **ShapeKit-Geodesic**; all methods remain independently selectable.
 
-8. `ct_file_name` / `ct_root`: how `shapekit_pro` finds the CT. The engine
-   first looks for `<input_case>/<ct_file_name>`; when `ct_root` is set it
-   also tries `<ct_root>/<case_id>/<ct_file_name>`.
+   | Value | Method | CT requirement |
+   | --- | --- | --- |
+   | `shapekit_geodesic` | **ShapeKit-Geodesic (default)**: CT-supported component and morphology processing, followed by conservative L1–T7 body-core geodesic partitioning using L2/T6 anchors | Required; falls back to legacy `shapekit` if missing, unreadable, or geometrically incompatible |
+   | `shapekit_pro` | ShapeKit-Pro: evidence-gated vertebra label repair within the prediction envelope | Required; falls back to legacy `shapekit` if absent |
+   | `shapekit_iterative` / `shapekit_songlin` | ShapeKit-Iterative: iterative anatomical consistency refinement | None |
+   | `shapekit` | Legacy mask-based module | None |
+
+   ```yaml
+   vertebrae_engine: shapekit_geodesic
+   ```
+
+   Geodesic's thoracolumbar stage skips relabeling when stable body-core
+   evidence is unavailable, the existing identities are already consistent,
+   or the affine is oblique and would require resampling. Its first-stage
+   output is retained in those cases. Decisions are recorded in
+   `<output_case>/vertebrae_geodesic_report.json`.
+
+   The main pipeline preserves its existing 26–49 vertebrae label scheme
+   (L5–C1). Its Geodesic adapter handles internal 1–24 labels and lossless
+   CT/mask axis reorientation to RAS, then restores the input mask orientation.
+   The [standalone Geodesic command](../README.md#ct-guided-geodesic-vertebrae-engine-shapekit-geodesic)
+   accepts vertebrae-only 1–24 label volumes instead.
+
+8. `ct_file_name` / `ct_root`: how `shapekit_geodesic` and `shapekit_pro`
+   find the CT. They first look for `<input_case>/<ct_file_name>`; when
+   `ct_root` is set they also try `<ct_root>/<case_id>/<ct_file_name>`.
+
+   ```yaml
+   ct_file_name: ct.nii.gz
+   # ct_root: /path/to/original/ct/cases
+   ```
+
+   Geodesic requires CT and prediction masks to describe the same voxel grid
+   after any lossless axis permutation/flips. It does not resample mismatched
+   images; the main pipeline logs a fallback to legacy `shapekit` instead.

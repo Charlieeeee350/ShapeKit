@@ -636,9 +636,11 @@ def save_and_combine_segmentations(processed_segmentation_dict: dict,
     # Save each organ mask individually and discard from memory
     for idx, organ in sorted(class_map.items()):
         mask = processed_segmentation_dict.pop(organ, None)
-        if mask is None or not mask.any():
+        if mask is None:
             continue
 
+        # Save empty results too: input files may already have been copied to
+        # the output directory, and must not resurrect deleted foreground.
         mask = mask.astype(np.uint8, copy=False)
         nib.save(
             nib.Nifti1Image(mask, reference_img.affine),
